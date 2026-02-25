@@ -102,6 +102,8 @@ def main():
 
     elif num_seeds == 5:
         print(f"[INFO] Direct: 5 seeds accepted.", file=sys.stderr)
+        for seed in range(len(raw_seeds)):
+            print(f"[INFO] Seed[{seed}]: {raw_seeds[seed]}", file=sys.stderr)
         states[:] = raw_seeds
     else:
         parser.error(f"You must provide either 1 seed or exactly 5 seeds. You provided {num_seeds}.")
