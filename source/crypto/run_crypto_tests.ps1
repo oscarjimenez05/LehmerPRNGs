@@ -24,7 +24,7 @@ function Launch-Test ($name, $delta) {
         $binary = "./test_from_pipe"
     }
 
-    $cmd = "python3 crypto/crypto_testing_interface.py $SEED0 $SEED1 $SEED2 $SEED3 $SEED4--delta $delta | $binary > $reportFile"
+    $cmd = "python3 crypto/crypto_testing_interface.py $SEED0 $SEED1 $SEED2 $SEED3 $SEED4 --delta $delta | $binary > $reportFile"
 
     Write-Host "Launching $fullName... (Output: $RESULTS_DIR\${fullName}_...)"
 
@@ -40,6 +40,6 @@ function Launch-Test ($name, $delta) {
 
 Write-Host "--- Starting CryptoLehmer TestU01 Tests ---" -ForegroundColor Cyan
 
-Launch-Test "CryptoLehmer_d0" 0 BigCrush
+Launch-Test "CryptoLehmer_d0" 0 $BigCrush
 
 Write-Host "Tests launched! Check the 'results' folder for logs." -ForegroundColor Yellow
