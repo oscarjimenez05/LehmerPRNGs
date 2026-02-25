@@ -40,6 +40,6 @@ function Launch-Test ($name, $delta) {
 
 Write-Host "--- Starting CryptoLehmer TestU01 Tests ---" -ForegroundColor Cyan
 
-Launch-Test "CryptoLehmer_d0" 0 $BigCrush
+Launch-Test "CryptoLehmer_d0" 0
 
 Write-Host "Tests launched! Check the 'results' folder for logs." -ForegroundColor Yellow
