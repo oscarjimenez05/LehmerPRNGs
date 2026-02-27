@@ -102,11 +102,12 @@ def main():
 
     elif num_seeds == 5:
         print(f"[INFO] Direct: 5 seeds accepted.", file=sys.stderr)
-        for seed in range(len(raw_seeds)):
-            print(f"[INFO] Seed[{seed}]: {raw_seeds[seed]}", file=sys.stderr)
         states[:] = raw_seeds
     else:
         parser.error(f"You must provide either 1 seed or exactly 5 seeds. You provided {num_seeds}.")
+
+    for seed_i in range(len(states)):
+        print(f"[INFO] Seed[{seed_i}]: {states[seed_i]}", file=sys.stderr)
 
     generator = crypto.CryptoLehmer(states, w, args.delta, 0, maximum)
 
