@@ -4,7 +4,7 @@ import numpy as np
 import math
 
 
-def generate_lehmer_sequence(data_array, w, variance_threshold=15):
+def generate_lehmer_sequence(data_array, w, variance_threshold=25):
     """
     Applies the Lehmer code mathematical logic from your paper to an external array.
     This replaces the Xorshift generation step with sliding window data ingestion.
@@ -32,13 +32,17 @@ def generate_lehmer_sequence(data_array, w, variance_threshold=15):
     return codes
 
 
-def extract_ngrams(sequence, n):
-    ngrams = [] # change to list to preserve frequency counts
+def extract_ngrams_with_idx(sequence, n):
+    """
+    Returns both the n-gram and the sequence index where it occurred
+    so we can calculate its crossing spatial coordinate.
+    """
+    ngrams = []
     for i in range(len(sequence) - n + 1):
         chunk = tuple(sequence[i:i + n])
         # only keep n-grams that are physically contiguous, discard break tokens
         if -1 not in chunk:
-            ngrams.append(chunk) # append instead of add
+            ngrams.append((i, chunk))  # tuple of (Index, N-Gram)
     return ngrams
 
 
@@ -68,20 +72,25 @@ def get_multiscale_features(image_path, base_width=250, scales=[1.0, 0.95, 0.9, 
         # rows
         for y, row in enumerate(img_scaled):
             seq = generate_lehmer_sequence(row, w)
-            ngrams = extract_ngrams(seq, ngram_size)
+            indexed_ngrams = extract_ngrams_with_idx(seq, ngram_size)
             grid_y = int((y / img_scaled.shape[0]) * grid_resolution)
-            # prefix with 'R'
-            all_features.extend([("R", grid_y) + ng for ng in ngrams])  # use extend
 
-        # columns
+            for x_idx, ng in indexed_ngrams:
+                grid_x = int((x_idx / img_scaled.shape[1]) * grid_resolution)
+                # 2D pinning
+                all_features.append(("R", grid_x, grid_y) + ng)
+
+        # Process Columns: Calculate Grid Y using the sequence index
         for x, col in enumerate(img_scaled.T):
             seq = generate_lehmer_sequence(col, w)
-            ngrams = extract_ngrams(seq, ngram_size)
+            indexed_ngrams = extract_ngrams_with_idx(seq, ngram_size)
             grid_x = int((x / img_scaled.shape[1]) * grid_resolution)
-            # prefix with 'C'
-            all_features.extend([("C", grid_x) + ng for ng in ngrams])
 
-    # return a counter dictionary mapping {feature: frequency}
+            for y_idx, ng in indexed_ngrams:
+                grid_y = int((y_idx / img_scaled.shape[0]) * grid_resolution)
+                # 2D pinning
+                all_features.append(("C", grid_x, grid_y) + ng)
+
     return Counter(all_features)
 
 
