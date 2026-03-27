@@ -1,10 +1,9 @@
 from collections import Counter
 import cv2
-import numpy as np
 import math
 
 
-def generate_lehmer_sequence(data_array, w, variance_threshold=25):
+def generate_lehmer_sequence(data_array, w, variance_threshold=15):
     """
     Applies the Lehmer code mathematical logic from your paper to an external array.
     This replaces the Xorshift generation step with sliding window data ingestion.
@@ -46,8 +45,8 @@ def extract_ngrams_with_idx(sequence, n):
     return ngrams
 
 
-def get_multiscale_features(image_path, base_width=250, scales=[1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65], w=5,
-                            ngram_size=3):
+def get_multiscale_features(image_path, base_width=500, scales=[1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65], w=5,
+                            ngram_size=3, grid_resolution=3):
     img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     if img is None: raise ValueError(f"Error: Could not load {image_path}")
 
@@ -57,8 +56,6 @@ def get_multiscale_features(image_path, base_width=250, scales=[1.0, 0.95, 0.9, 
     img_base = cv2.resize(img, (base_width, base_height))
 
     all_features = []  # list instead of set
-    # define a spatial grid (4x4) to retain spatial context
-    grid_resolution = 4
 
     for scale in scales:
         scaled_width = int(base_width * scale)
@@ -94,12 +91,12 @@ def get_multiscale_features(image_path, base_width=250, scales=[1.0, 0.95, 0.9, 
     return Counter(all_features)
 
 
-def compare_images_multiscale(path_a, path_b, w=5, ngram_size=3):
+def compare_images_multiscale(path_a, path_b):
     print(f"Comparing:\n1. {path_a}\n2. {path_b}\n")
 
     # these are Counter objects
-    counts_a = get_multiscale_features(path_a, base_width=250, w=w, ngram_size=ngram_size)
-    counts_b = get_multiscale_features(path_b, base_width=250, w=w, ngram_size=ngram_size)
+    counts_a = get_multiscale_features(path_a)
+    counts_b = get_multiscale_features(path_b)
 
     total_features_a = sum(counts_a.values())
     total_features_b = sum(counts_b.values())
@@ -128,8 +125,8 @@ def compare_images_multiscale(path_a, path_b, w=5, ngram_size=3):
 
 if __name__ == "__main__":
     print("Comparing Napoleon")
-    compare_images_multiscale("nap1.jpg", "nap2.jpg", w=5, ngram_size=3)
+    compare_images_multiscale("nap1.jpg", "nap2.jpg")
     print("Comparing FKA Twigs")
-    compare_images_multiscale("fka1.jpg", "fka2.jpg", w=5, ngram_size=3)
+    compare_images_multiscale("fka1.jpg", "fka2.jpg")
     print("Comparing Napoleon with FKA Twigs")
-    compare_images_multiscale("nap1.jpg", "fka2.jpg", w=5, ngram_size=3)
+    compare_images_multiscale("nap1.jpg", "fka2.jpg")
