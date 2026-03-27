@@ -3,25 +3,6 @@ import numpy as np
 import math
 
 
-def get_row_averages(image_path, target_height=500):
-    """
-    Loads an image, converts it to grayscale, resizes it to a uniform
-    vertical height, and calculates the average pixel intensity per row.
-    """
-    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-    if img is None:
-        raise ValueError(f"Error: Could not load image at {image_path}. Check the path.")
-
-    # Maintain aspect ratio while normalizing the vertical height
-    aspect_ratio = img.shape[1] / img.shape[0]
-    target_width = int(target_height * aspect_ratio)
-    img_resized = cv2.resize(img, (target_width, target_height))
-
-    # Compress 2D matrix to 1D array of row averages
-    row_averages = np.mean(img_resized, axis=1)
-    return row_averages
-
-
 def generate_lehmer_sequence(data_array, w):
     """
     Applies the Lehmer code mathematical logic from your paper to an external array.
@@ -56,55 +37,58 @@ def extract_ngrams(sequence, n):
     return set(tuple(sequence[i:i + n]) for i in range(len(sequence) - n + 1))
 
 
-def calculate_jaccard_similarity(set_a, set_b):
+def get_2d_lehmer_features(image_path, grid_size=64, w=5, ngram_size=3):
     """
-    Calculates the Jaccard index between two sets.
+    Extracts a 2D Bag-of-Words Lehmer fingerprint from an image.
     """
-    intersection = len(set_a.intersection(set_b))
-    union = len(set_a.union(set_b))
-    if union == 0:
-        return 0.0
-    return intersection / union
+    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    if img is None:
+        raise ValueError(f"Error: Could not load image at {image_path}.")
+
+    # force into fixed grid and blur slightly (low pass filter)
+    img_resized = cv2.resize(img, (grid_size, grid_size))
+    img_blurred = cv2.GaussianBlur(img_resized, (3, 3), 0)
+
+    all_ngrams = set()
+
+    # extract features from every row
+    for row in img_blurred:
+        seq = generate_lehmer_sequence(row, w)
+        ngrams = extract_ngrams(seq, ngram_size)
+        # Prefix 'R' to designate horizontal features
+        all_ngrams.update([("R",) + ng for ng in ngrams])
+
+    # extract features from every column
+    for col in img_blurred.T:
+        seq = generate_lehmer_sequence(col, w)
+        ngrams = extract_ngrams(seq, ngram_size)
+        # Prefix 'C' to designate vertical features
+        all_ngrams.update([("C",) + ng for ng in ngrams])
+
+    return all_ngrams
 
 
-def compare_images(path_a, path_b, w=5, ngram_size=3):
-    """
-    Orchestrates the pipeline to compare two images using Lehmer Code LSH.
-    """
+def compare_images_2d(path_a, path_b, w=5, ngram_size=3):
     print(f"Comparing:\n1. {path_a}\n2. {path_b}\n")
 
-    arr_a = get_row_averages(path_a)
-    arr_b = get_row_averages(path_b)
+    features_a = get_2d_lehmer_features(path_a, grid_size=64, w=w, ngram_size=ngram_size)
+    features_b = get_2d_lehmer_features(path_b, grid_size=64, w=w, ngram_size=ngram_size)
 
-    seq_a = generate_lehmer_sequence(arr_a, w)
-    seq_b = generate_lehmer_sequence(arr_b, w)
-
-    # Shingles (n-grams)
-    shingles_a = extract_ngrams(seq_a, ngram_size)
-    shingles_b = extract_ngrams(seq_b, ngram_size)
-
-    # Calculate Similarity
-    score = calculate_jaccard_similarity(shingles_a, shingles_b)
+    # Calculate Jaccard Similarity
+    intersection = len(features_a.intersection(features_b))
+    union = len(features_a.union(features_b))
+    score = intersection / union if union > 0 else 0.0
 
     print(f"--- Results ---")
     print(f"Window Size (w): {w}")
     print(f"N-Gram Size: {ngram_size}")
-    print(f"Unique Lehmer n-grams in Image A: {len(shingles_a)}")
-    print(f"Unique Lehmer n-grams in Image B: {len(shingles_b)}")
-    print(f"Shared n-grams: {len(shingles_a.intersection(shingles_b))}")
+    print(f"Total Unique Features A: {len(features_a)}")
+    print(f"Total Unique Features B: {len(features_b)}")
+    print(f"Shared Features: {intersection}")
     print(f"Similarity Score: {score * 100:.2f}%\n")
 
     return score
 
 
 if __name__ == "__main__":
-    # paths for the example execution
-    image_1 = "img1.jpg"
-    image_2 = "img2.jpg"
-
-    try:
-        compare_images(image_1, image_2, w=6, ngram_size=4)
-
-
-    except Exception as e:
-        print(e)
+    compare_images_2d("img1.jpg", "img2.jpg", w=5, ngram_size=3)
