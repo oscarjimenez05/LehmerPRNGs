@@ -3,28 +3,28 @@ import numpy as np
 import math
 
 
-def generate_lehmer_sequence(data_array, w):
+def generate_lehmer_sequence(data_array, w, variance_threshold=15):
     """
     Applies the Lehmer code mathematical logic from your paper to an external array.
     This replaces the Xorshift generation step with sliding window data ingestion.
     """
     codes = []
-    # Precompute factorials just like in your Cython script
     factorials = [math.factorial(w - i - 1) for i in range(w)]
 
-    # Slide the window of size w across the array (delta = 1)
     for i in range(len(data_array) - w + 1):
         window = data_array[i:i + w]
-        lehmer = 0
 
-        # Calculate how many elements to the right are smaller
+        # if min and max differ by less than the threshold, it's just noise so discard it
+        if max(window) - min(window) < variance_threshold:
+            continue
+
+        lehmer = 0
         for j in range(w):
             smaller = 0
             for k in range(j + 1, w):
                 if window[k] < window[j]:
                     smaller += 1
             lehmer += smaller * factorials[j]
-
         codes.append(lehmer)
 
     return codes
