@@ -37,58 +37,80 @@ def extract_ngrams(sequence, n):
     return set(tuple(sequence[i:i + n]) for i in range(len(sequence) - n + 1))
 
 
-def get_2d_lehmer_features(image_path, grid_size=64, w=5, ngram_size=3):
-    """
-    Extracts a 2D Bag-of-Words Lehmer fingerprint from an image.
-    """
+def get_multiscale_features(image_path, base_width=250, scales=[1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65], w=5,
+                            ngram_size=3):
     img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     if img is None:
-        raise ValueError(f"Error: Could not load image at {image_path}.")
+        raise ValueError(f"Error: Could not load {image_path}")
 
-    # force into fixed grid and blur slightly (low pass filter)
-    img_resized = cv2.resize(img, (grid_size, grid_size))
-    img_blurred = cv2.GaussianBlur(img_resized, (3, 3), 0)
+    # resize to a normalized base width while maintaining the original aspect ratio
+    aspect_ratio = img.shape[0] / img.shape[1]
+    base_height = int(base_width * aspect_ratio)
+    img_base = cv2.resize(img, (base_width, base_height))
 
-    all_ngrams = set()
+    all_features = set()
 
-    # extract features from every row
-    for row in img_blurred:
-        seq = generate_lehmer_sequence(row, w)
-        ngrams = extract_ngrams(seq, ngram_size)
-        # Prefix 'R' to designate horizontal features
-        all_ngrams.update([("R",) + ng for ng in ngrams])
+    # extract features at multiple scales to create "Scale Invariance"
+    for scale in scales:
+        scaled_width = int(base_width * scale)
+        scaled_height = int(base_height * scale)
 
-    # extract features from every column
-    for col in img_blurred.T:
-        seq = generate_lehmer_sequence(col, w)
-        ngrams = extract_ngrams(seq, ngram_size)
-        # Prefix 'C' to designate vertical features
-        all_ngrams.update([("C",) + ng for ng in ngrams])
+        # avoid shrinking too far
+        if scaled_width < w or scaled_height < w:
+            continue
 
-    return all_ngrams
+        img_scaled = cv2.resize(img_base, (scaled_width, scaled_height))
+        # blur for digital sensor noise and focus on macro-shapes
+        img_scaled = cv2.GaussianBlur(img_scaled, (3, 3), 0)
+
+        # rows
+        for row in img_scaled:
+            seq = generate_lehmer_sequence(row, w)
+            ngrams = extract_ngrams(seq, ngram_size)
+            # prefix with 'R'
+            all_features.update([("R",) + ng for ng in ngrams])
+
+        # columns
+        for col in img_scaled.T:
+            seq = generate_lehmer_sequence(col, w)
+            ngrams = extract_ngrams(seq, ngram_size)
+            # prefix with 'C'
+            all_features.update([("C",) + ng for ng in ngrams])
+
+    return all_features
 
 
-def compare_images_2d(path_a, path_b, w=5, ngram_size=3):
+def compare_images_multiscale(path_a, path_b, w=5, ngram_size=3):
     print(f"Comparing:\n1. {path_a}\n2. {path_b}\n")
 
-    features_a = get_2d_lehmer_features(path_a, grid_size=64, w=w, ngram_size=ngram_size)
-    features_b = get_2d_lehmer_features(path_b, grid_size=64, w=w, ngram_size=ngram_size)
+    # Extract massive feature sets across all scales
+    features_a = get_multiscale_features(path_a, base_width=250, w=w, ngram_size=ngram_size)
+    features_b = get_multiscale_features(path_b, base_width=250, w=w, ngram_size=ngram_size)
 
-    # Calculate Jaccard Similarity
     intersection = len(features_a.intersection(features_b))
+
+    # Jaccard
     union = len(features_a.union(features_b))
-    score = intersection / union if union > 0 else 0.0
+    jaccard_score = intersection / union if union > 0 else 0.0
+
+    # Overlap coefficient
+    min_features = min(len(features_a), len(features_b))
+    containment_score = intersection / min_features if min_features > 0 else 0.0
 
     print(f"--- Results ---")
-    print(f"Window Size (w): {w}")
-    print(f"N-Gram Size: {ngram_size}")
     print(f"Total Unique Features A: {len(features_a)}")
     print(f"Total Unique Features B: {len(features_b)}")
     print(f"Shared Features: {intersection}")
-    print(f"Similarity Score: {score * 100:.2f}%\n")
+    print(f"Jaccard Similarity: {jaccard_score * 100:.2f}%")
+    print(f"Asymmetric Containment Score: {containment_score * 100:.2f}%\n")
 
-    return score
+    return containment_score
 
 
 if __name__ == "__main__":
-    compare_images_2d("img1.jpg", "img2.jpg", w=5, ngram_size=3)
+    print("Comparing Napoleon")
+    compare_images_multiscale("nap1.jpg", "nap2.jpg", w=5, ngram_size=3)
+    print("Comparing FKA Twigs")
+    compare_images_multiscale("fka1.jpg", "fka2.jpg", w=5, ngram_size=3)
+    print("Comparing Napoleon with FKA Twigs")
+    compare_images_multiscale("nap1.jpg", "fka2.jpg", w=5, ngram_size=3)
