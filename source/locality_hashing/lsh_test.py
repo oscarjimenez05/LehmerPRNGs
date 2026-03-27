@@ -14,8 +14,9 @@ def generate_lehmer_sequence(data_array, w, variance_threshold=15):
     for i in range(len(data_array) - w + 1):
         window = data_array[i:i + w]
 
-        # if min and max differ by less than the threshold, it's just noise so discard it
-        if max(window) - min(window) < variance_threshold:
+        # ca to int to prevent numpy uint8 underflow
+        if int(max(window)) - int(min(window)) < variance_threshold:
+            codes.append(-1)  # insert break token to prevent stitching features
             continue
 
         lehmer = 0
@@ -31,10 +32,13 @@ def generate_lehmer_sequence(data_array, w, variance_threshold=15):
 
 
 def extract_ngrams(sequence, n):
-    """
-    Converts a sequence of Lehmer codes into a set of overlapping n-grams.
-    """
-    return set(tuple(sequence[i:i + n]) for i in range(len(sequence) - n + 1))
+    ngrams = set()
+    for i in range(len(sequence) - n + 1):
+        chunk = tuple(sequence[i:i + n])
+        # only keep n-grams that are physically contiguous, discard break tokens
+        if -1 not in chunk:
+            ngrams.add(chunk)
+    return ngrams
 
 
 def get_multiscale_features(image_path, base_width=250, scales=[1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65], w=5,
@@ -50,32 +54,33 @@ def get_multiscale_features(image_path, base_width=250, scales=[1.0, 0.95, 0.9, 
 
     all_features = set()
 
-    # extract features at multiple scales to create "Scale Invariance"
+    # define a spatial grid (4x4) to retain spatial context
+    grid_resolution = 4
+
     for scale in scales:
         scaled_width = int(base_width * scale)
         scaled_height = int(base_height * scale)
-
-        # avoid shrinking too far
-        if scaled_width < w or scaled_height < w:
-            continue
+        if scaled_width < w or scaled_height < w: continue
 
         img_scaled = cv2.resize(img_base, (scaled_width, scaled_height))
         # blur for digital sensor noise and focus on macro-shapes
         img_scaled = cv2.GaussianBlur(img_scaled, (3, 3), 0)
 
         # rows
-        for row in img_scaled:
+        for y, row in enumerate(img_scaled):
             seq = generate_lehmer_sequence(row, w)
             ngrams = extract_ngrams(seq, ngram_size)
+            grid_y = int((y / img_scaled.shape[0]) * grid_resolution)
             # prefix with 'R'
-            all_features.update([("R",) + ng for ng in ngrams])
+            all_features.update([("R", grid_y) + ng for ng in ngrams])
 
         # columns
-        for col in img_scaled.T:
+        for x, col in enumerate(img_scaled.T):
             seq = generate_lehmer_sequence(col, w)
             ngrams = extract_ngrams(seq, ngram_size)
+            grid_x = int((x / img_scaled.shape[1]) * grid_resolution)
             # prefix with 'C'
-            all_features.update([("C",) + ng for ng in ngrams])
+            all_features.update([("C", grid_x) + ng for ng in ngrams])
 
     return all_features
 
