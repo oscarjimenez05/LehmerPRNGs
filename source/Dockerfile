@@ -9,10 +9,16 @@ RUN apt-get update && apt-get install -y \
     dieharder \
     make \
     g++ \
+    libgl1 \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender1 \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir numpy cython setuptools
 RUN pip install --no-cache-dir matplotlib scipy statsmodels z3-solver
+RUN pip install --no-cache-dir opencv-python
 
 WORKDIR /app
 COPY setup.py alt_setup.py crypto_setup.py ./
@@ -24,6 +30,8 @@ RUN python3 alt_setup.py build_ext --inplace
 
 COPY crypto/ ./crypto/
 RUN python3 crypto_setup.py build_ext --inplace
+
+COPY locality_hashing ./locality_hashing/
 
 COPY . .
 
