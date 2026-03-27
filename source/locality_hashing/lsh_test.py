@@ -1,3 +1,4 @@
+from collections import Counter
 import cv2
 import numpy as np
 import math
@@ -32,28 +33,26 @@ def generate_lehmer_sequence(data_array, w, variance_threshold=15):
 
 
 def extract_ngrams(sequence, n):
-    ngrams = set()
+    ngrams = [] # change to list to preserve frequency counts
     for i in range(len(sequence) - n + 1):
         chunk = tuple(sequence[i:i + n])
         # only keep n-grams that are physically contiguous, discard break tokens
         if -1 not in chunk:
-            ngrams.add(chunk)
+            ngrams.append(chunk) # append instead of add
     return ngrams
 
 
 def get_multiscale_features(image_path, base_width=250, scales=[1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65], w=5,
                             ngram_size=3):
     img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-    if img is None:
-        raise ValueError(f"Error: Could not load {image_path}")
+    if img is None: raise ValueError(f"Error: Could not load {image_path}")
 
     # resize to a normalized base width while maintaining the original aspect ratio
     aspect_ratio = img.shape[0] / img.shape[1]
     base_height = int(base_width * aspect_ratio)
     img_base = cv2.resize(img, (base_width, base_height))
 
-    all_features = set()
-
+    all_features = []  # list instead of set
     # define a spatial grid (4x4) to retain spatial context
     grid_resolution = 4
 
@@ -72,7 +71,7 @@ def get_multiscale_features(image_path, base_width=250, scales=[1.0, 0.95, 0.9, 
             ngrams = extract_ngrams(seq, ngram_size)
             grid_y = int((y / img_scaled.shape[0]) * grid_resolution)
             # prefix with 'R'
-            all_features.update([("R", grid_y) + ng for ng in ngrams])
+            all_features.extend([("R", grid_y) + ng for ng in ngrams])  # use extend
 
         # columns
         for x, col in enumerate(img_scaled.T):
@@ -80,32 +79,38 @@ def get_multiscale_features(image_path, base_width=250, scales=[1.0, 0.95, 0.9, 
             ngrams = extract_ngrams(seq, ngram_size)
             grid_x = int((x / img_scaled.shape[1]) * grid_resolution)
             # prefix with 'C'
-            all_features.update([("C", grid_x) + ng for ng in ngrams])
+            all_features.extend([("C", grid_x) + ng for ng in ngrams])
 
-    return all_features
+    # return a counter dictionary mapping {feature: frequency}
+    return Counter(all_features)
 
 
 def compare_images_multiscale(path_a, path_b, w=5, ngram_size=3):
     print(f"Comparing:\n1. {path_a}\n2. {path_b}\n")
 
-    # Extract massive feature sets across all scales
-    features_a = get_multiscale_features(path_a, base_width=250, w=w, ngram_size=ngram_size)
-    features_b = get_multiscale_features(path_b, base_width=250, w=w, ngram_size=ngram_size)
+    # these are Counter objects
+    counts_a = get_multiscale_features(path_a, base_width=250, w=w, ngram_size=ngram_size)
+    counts_b = get_multiscale_features(path_b, base_width=250, w=w, ngram_size=ngram_size)
 
-    intersection = len(features_a.intersection(features_b))
+    total_features_a = sum(counts_a.values())
+    total_features_b = sum(counts_b.values())
 
-    # Jaccard
-    union = len(features_a.union(features_b))
-    jaccard_score = intersection / union if union > 0 else 0.0
+    # multiset intersection (sum of the minimum frequencies)
+    shared_keys = counts_a.keys() & counts_b.keys()
+    intersection_count = sum(min(counts_a[k], counts_b[k]) for k in shared_keys)
 
-    # Overlap coefficient
-    min_features = min(len(features_a), len(features_b))
-    containment_score = intersection / min_features if min_features > 0 else 0.0
+    # multiset union
+    union_count = total_features_a + total_features_b - intersection_count
+    jaccard_score = intersection_count / union_count if union_count > 0 else 0.0
+
+    # asymmetric containment
+    min_total = min(total_features_a, total_features_b)
+    containment_score = intersection_count / min_total if min_total > 0 else 0.0
 
     print(f"--- Results ---")
-    print(f"Total Unique Features A: {len(features_a)}")
-    print(f"Total Unique Features B: {len(features_b)}")
-    print(f"Shared Features: {intersection}")
+    print(f"Total Feature Count A: {total_features_a} (Unique: {len(counts_a)})")
+    print(f"Total Feature Count B: {total_features_b} (Unique: {len(counts_b)})")
+    print(f"Intersecting Features: {intersection_count}")
     print(f"Jaccard Similarity: {jaccard_score * 100:.2f}%")
     print(f"Asymmetric Containment Score: {containment_score * 100:.2f}%\n")
 
