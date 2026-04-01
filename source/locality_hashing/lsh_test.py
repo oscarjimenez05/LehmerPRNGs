@@ -130,3 +130,5 @@ if __name__ == "__main__":
     compare_images_multiscale("fka1.jpg", "fka2.jpg")
     print("Comparing Napoleon with FKA Twigs")
     compare_images_multiscale("nap1.jpg", "fka2.jpg")
+    print("Comparing Speed")
+    compare_images_multiscale("speed_dark.jpg", "speed_bright.jpg")
