@@ -25,11 +25,11 @@ def large_lcg_vs_lcg_lh():
     a_lcg = np.array(a_lcg)
 
     print("Checkpoint 1.2")
-    pre = (seed * 1664525 + 1013904223) % max_exclusive
-    a_large_lcg = [pre]
+    pre = (seed * 1664525 + 1013904223) % (2**32)
+    a_large_lcg = [pre % max_exclusive]
     for i in range(reps-1):
+        pre = (pre * 1664525 + 1013904223) % (2**32)
         a_large_lcg.append(pre % max_exclusive)
-        pre = (a_large_lcg[i] * 1664525 + 1013904223) % 2**32
 
     assert len(a_large_lcg) == reps
     a_large_lcg = np.array(a_large_lcg)
@@ -78,7 +78,7 @@ def missing_from_range(lst: [int], start: int, end: int) -> [int]:
 
 def serial_correlation_comparison():
     seed = 135
-    reps = 100000
+    reps = 10000
     window = 6
 
     max_exclusive = math.factorial(window)
@@ -89,11 +89,11 @@ def serial_correlation_comparison():
     assert len(a_lcg) == reps
     a_lcg = np.array(a_lcg)
 
-    pre = (seed * 1664525 + 1013904223) % max_exclusive
-    a_large_lcg = [pre]
+    pre = (seed * 1664525 + 1013904223) % (2**32)
+    a_large_lcg = [pre % max_exclusive]
     for i in range(reps - 1):
+        pre = (pre * 1664525 + 1013904223) % (2**32)
         a_large_lcg.append(pre % max_exclusive)
-        pre = (a_large_lcg[i] * 1664525 + 1013904223) % 2 ** 32
 
     assert len(a_large_lcg) == reps
     a_large_lcg = np.array(a_large_lcg)
