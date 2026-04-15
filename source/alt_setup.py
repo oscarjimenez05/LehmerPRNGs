@@ -44,6 +44,13 @@ extensions = [
         extra_compile_args=c_args,
         language="c++",
     ),
+    Extension(
+        "alternatives.comp",
+        ["alternatives/comp.pyx"],
+        include_dirs=[numpy.get_include()],
+        extra_compile_args=c_args,
+        language="c++",
+    ),
 ]
 
 setup(
