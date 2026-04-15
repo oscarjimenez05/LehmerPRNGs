@@ -124,7 +124,7 @@ def main():
 
     parser.add_argument("--total", type=int, help="total numbers to generate (required for file mode)")
     parser.add_argument("--algo", choices=['lcg', 'xor', 'lfw', 'xfw', 'log',
-                                           'gau', 'slp', 'dec', 'comp1', 'Lcomp', 'Hcomp'], default='lcg', help="Choose generator algorithm")
+                                           'gau', 'slp', 'dec', 'Lcomp', 'Hcomp'], default='lcg', help="Choose generator algorithm")
     parser.add_argument("--debug", action="store_true", help="enable debug mode")
 
     args = parser.parse_args()
