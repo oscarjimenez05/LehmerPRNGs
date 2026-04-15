@@ -13,6 +13,7 @@ import alternatives.logistic_lh as log
 import alternatives.gaussian_lh as gau
 import alternatives.slope_lh as slp
 import alternatives.decay_lh as dec
+import alternatives.comp as comp
 
 maximum = 2 ** 32 - 1
 chunk_size = 8192
@@ -123,7 +124,7 @@ def main():
 
     parser.add_argument("--total", type=int, help="total numbers to generate (required for file mode)")
     parser.add_argument("--algo", choices=['lcg', 'xor', 'lfw', 'xfw', 'log',
-                                           'gau', 'slp', 'dec'], default='lcg', help="Choose generator algorithm")
+                                           'gau', 'slp', 'dec', 'comp1', 'Lcomp', 'Hcomp'], default='lcg', help="Choose generator algorithm")
     parser.add_argument("--debug", action="store_true", help="enable debug mode")
 
     args = parser.parse_args()
@@ -151,6 +152,10 @@ def main():
             generator = slp.SlopeLehmer(args.seed, w, args.delta, 0, maximum)
         case 'dec':
             generator = dec.DecayLehmer(args.seed, w, args.delta, 0, maximum)
+        case 'Lcomp':
+            generator = comp.LmLcg(args.seed, 0, maximum)
+        case 'Hcomp':
+            generator = comp.HighBitsLcg(args.seed, 0, maximum)
 
     # -----------------------------------------------
 
