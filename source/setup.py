@@ -22,6 +22,12 @@ extensions = [
         include_dirs=[numpy.get_include()],
         extra_compile_args=c_args,
     ),
+    Extension(
+        "raw_xor_lh",
+        ["raw_xor_lh.pyx"],
+        include_dirs=[numpy.get_include()],
+        extra_compile_args=c_args,
+    ),
 ]
 
 setup(
