@@ -3,15 +3,17 @@ import math
 import csv
 import random
 import numpy as np
+import argparse
 
+
+parser = argparse.ArgumentParser(description="Validate timing constants.")
+parser.add_argument('constants', type=float, nargs=3, help='The three constants')
+HARDWARE_COEFFS = list(parser.parse_args().constants)
 
 import xor_lh as xlh
 def generalized_xor_lh(seed, w, R, n):
     generator = xlh.XorLehmer(seed, w, 0, 0, R - 1)
     return generator.generate_chunk(n, 0)
-
-
-HARDWARE_COEFFS = [2.04e-10, 1.65e-09, 1.44e-09]
 
 
 def expected_time(w, R, coeffs):
@@ -57,7 +59,7 @@ def generate_test_ranges():
     return sorted(list(ranges))
 
 
-def run_csv_validation_suite(n_generations=50_000, filename="lehmer_validation_results.csv"):
+def run_csv_validation_suite(n_generations=50_000, filename="lehmer_validation_results2.csv"):
     """
     Runs the full battery of tests and outputs a CSV.
     """
@@ -133,4 +135,5 @@ def run_csv_validation_suite(n_generations=50_000, filename="lehmer_validation_r
 
 
 if __name__ == "__main__":
+    print(f"Validating timing constants ({HARDWARE_COEFFS[0]}, {HARDWARE_COEFFS[1]}, {HARDWARE_COEFFS[2]})")
     run_csv_validation_suite(n_generations=50_000)

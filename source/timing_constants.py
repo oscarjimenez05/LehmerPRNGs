@@ -1,3 +1,4 @@
+import sys
 import time
 import math
 import numpy as np
@@ -23,7 +24,7 @@ def profile_base_cost(trials=10, n_generations=1_000_000):
     Profile the raw Lehmer calculation cost.
     Uses multiple trials and takes the MINIMUM time to avoid OS/thermal noise.
     """
-    print("--- Profiling Base Cost ---")
+    print("--- Profiling Base Cost ---", file=sys.stderr)
     w_values = list(range(2, 19))
     times = []
 
@@ -43,11 +44,12 @@ def profile_base_cost(trials=10, n_generations=1_000_000):
 
         time_per_gen = best_time / n_generations
         times.append(time_per_gen)
-        print(f"w={w}: {time_per_gen:.2e} seconds per gen")
+        print(f"w={w}: {time_per_gen:.2e} seconds per gen", file=sys.stderr)
 
     # fit a quadratic curve: t(w) = c1*w^2 + c2*w + c3
     coeffs = np.polyfit(w_values, times, 2)
-    print(f"\nFitted Constants: c1={coeffs[0]:.2e}, c2={coeffs[1]:.2e}, c3={coeffs[2]:.2e}")
+    print(f"\nFitted Constants: c1={coeffs[0]:.2e}, c2={coeffs[1]:.2e}, c3={coeffs[2]:.2e}", file=sys.stderr)
+    print(f"{coeffs[0]:.2e} {coeffs[1]:.2e} {coeffs[2]:.2e}")
     return coeffs, w_values, times
 
 
@@ -71,10 +73,10 @@ def validate_model(coeffs, test_R_values, n_generations=100_000):
     Empirical Validation.
     Compares the theoretical equation against real hardware execution.
     """
-    print("\n--- Validating Model ---")
+    print("\n--- Validating Model ---", file=sys.stderr)
 
     for R in test_R_values:
-        print(f"\nTesting Range R = {R}")
+        print(f"\nTesting Range R = {R}", file=sys.stderr)
         valid_w = [w for w in range(2, 19) if math.factorial(w) >= R]
 
         actual_times = []
@@ -92,7 +94,7 @@ def validate_model(coeffs, test_R_values, n_generations=100_000):
 
             actual = (end - start) / 1e9
             actual_times.append(actual)
-            print(f"  w={w}: Expected={theoretical:.4f}s, Actual={actual:.4f}s")
+            print(f"  w={w}: Expected={theoretical:.4f}s, Actual={actual:.4f}s", file=sys.stderr)
 
         # plotting the validation
         plt.figure(figsize=(8, 5))
@@ -134,5 +136,5 @@ if __name__ == "__main__":
     # example usage of the rule:
     example_R = 7200
     w_opt = find_optimal_w(example_R, coeffs)
-    print(f"\n--- Derivation ---")
-    print(f"For Range {example_R}, the mathematically optimal window size is: w={w_opt}")
+    print(f"\n--- Derivation ---", file=sys.stderr)
+    print(f"For Range {example_R}, the mathematically optimal window size is: w={w_opt}", file=sys.stderr)
