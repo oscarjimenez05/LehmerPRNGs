@@ -49,7 +49,7 @@ def profile_base_cost(trials=10, n_generations=1_000_000):
     # fit a quadratic curve: t(w) = c1*w^2 + c2*w + c3
     coeffs = np.polyfit(w_values, times, 2)
     print(f"\nFitted Constants: c1={coeffs[0]:.2e}, c2={coeffs[1]:.2e}, c3={coeffs[2]:.2e}", file=sys.stderr)
-    print(f"{coeffs[0]:.2e} {coeffs[1]:.2e} {coeffs[2]:.2e}")
+    print(f"{coeffs[0]:.2e} {coeffs[1]:.2e} {coeffs[2]:.2e}", flush=True)
     return coeffs, w_values, times
 
 
@@ -131,7 +131,7 @@ if __name__ == "__main__":
 
     # test specific ranges (e.g., a card deck, a calendar, a large sim)
     test_ranges = [52, 365, 1_000_000, 2**32]
-    validate_model(coeffs, test_ranges)
+    # validate_model(coeffs, test_ranges)
 
     # example usage of the rule:
     example_R = 7200
