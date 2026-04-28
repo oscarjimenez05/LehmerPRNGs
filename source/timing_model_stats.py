@@ -1,38 +1,53 @@
 import csv
 import random
+import glob
 import numpy as np
 import matplotlib.pyplot as plt
 
 
-def analyze_and_plot(csv_filename):
-    ranges_data = {}
-    with open(csv_filename, mode='r') as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            if not row.get('Tested_w') or row['Tested_w'].strip() == '':
-                continue
+def analyze_and_plot_aggregated(file_pattern="Optimal Window Size*.csv"):
+    csv_files = glob.glob(file_pattern)
+    if not csv_files:
+        print("No CSV files found matching the pattern.")
+        return
 
-            R = row['Range_R']
-            w = int(row['Tested_w'])
+    print(f"Found {len(csv_files)} files. Aggregating data...")
 
-            if R not in ranges_data:
-                ranges_data[R] = {'options': [], 'predicted': None, 'actual': None}
+    all_valid_trials = []
 
-            ranges_data[R]['options'].append(w)
-            if int(row['Is_Predicted_Optimal']) == 1:
-                ranges_data[R]['predicted'] = w
-            if int(row['Is_Actual_Optimal']) == 1:
-                ranges_data[R]['actual'] = w
+    for filename in csv_files:
+        ranges_data = {}
+        with open(filename, mode='r') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                if not row.get('Tested_w') or str(row['Tested_w']).strip() == '':
+                    continue
 
-    valid_ranges = {k: v for k, v in ranges_data.items() if v['predicted'] is not None and v['actual'] is not None}
+                R = row['Range_R']
+                w = int(row['Tested_w'])
+
+                if R not in ranges_data:
+                    ranges_data[R] = {'options': [], 'predicted': None, 'actual': None}
+
+                ranges_data[R]['options'].append(w)
+                if int(row['Is_Predicted_Optimal']) == 1:
+                    ranges_data[R]['predicted'] = w
+                if int(row['Is_Actual_Optimal']) == 1:
+                    ranges_data[R]['actual'] = w
+
+        for R, data in ranges_data.items():
+            if data['predicted'] is not None and data['actual'] is not None:
+                all_valid_trials.append(data)
+
+    print(f"Total independent trials aggregated: {len(all_valid_trials)}")
 
     model_exact = 0
     model_distance = 0
-    for data in valid_ranges.values():
-        model_exact += (data['actual'] == data['predicted'])
-        model_distance += abs(data['actual'] - data['predicted'])
+    for trial in all_valid_trials:
+        model_exact += (trial['actual'] == trial['predicted'])
+        model_distance += abs(trial['actual'] - trial['predicted'])
 
-    # Monte Carlo Simulation (10,000 iterations)
+    print("Running 10,000 Monte Carlo simulations...")
     simulations = 10000
     random_exacts = []
     random_distances = []
@@ -40,10 +55,10 @@ def analyze_and_plot(csv_filename):
     for _ in range(simulations):
         sim_e = 0
         sim_d = 0
-        for data in valid_ranges.values():
-            guess = random.choice(data['options'])
-            sim_e += (guess == data['actual'])
-            sim_d += abs(data['actual'] - guess)
+        for trial in all_valid_trials:
+            guess = random.choice(trial['options'])
+            sim_e += (guess == trial['actual'])
+            sim_d += abs(trial['actual'] - guess)
         random_exacts.append(sim_e)
         random_distances.append(sim_d)
 
@@ -55,8 +70,8 @@ def analyze_and_plot(csv_filename):
     # plots
     plt.style.use('bmh')
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
-    fig.suptitle(f"Model Performance vs. Random Chance ({len(valid_ranges)} Ranges Tested)", fontsize=16,
-                 fontweight='bold')
+    fig.suptitle(f"Unified Model Performance vs. Random Chance ({len(all_valid_trials)} Aggregated Trials)",
+                 fontsize=16, fontweight='bold')
 
     # --- Exact Matches ---
     ax1.hist(random_exacts, bins=range(max(random_exacts) + 2), align='left', color='#4C72B0', edgecolor='white',
@@ -92,11 +107,9 @@ def analyze_and_plot(csv_filename):
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-    plt.savefig(f'{csv_filename[:-4]}_results.png', dpi=300)
-    print(f"Analysis complete. High-res plot saved as '{csv_filename[:-4]}_results.png'")
-    plt.show()
+    plt.savefig('unified_monte_carlo_results.png', dpi=300)
+    print("Analysis complete. High-res unified plot saved as 'unified_monte_carlo_results.png'")
 
 
 if __name__ == "__main__":
-    for i in range(1,5):
-        analyze_and_plot(f"results/Optimal Window Size - Sheet{i}.csv")
+    analyze_and_plot_aggregated("results/Optimal Window Size*.csv")
