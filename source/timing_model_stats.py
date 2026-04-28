@@ -45,7 +45,9 @@ def analyze_and_plot_aggregated(file_pattern="Optimal Window Size*.csv"):
     model_distance = 0
     for trial in all_valid_trials:
         model_exact += (trial['actual'] == trial['predicted'])
-        model_distance += abs(trial['actual'] - trial['predicted'])
+        # model_distance += abs(trial['actual'] - trial['predicted'])
+        model_distance_sum = sum(abs(t['actual'] - t['predicted']) for t in all_valid_trials)
+        model_mae = model_distance_sum / len(all_valid_trials)
 
     print("Running 10,000 Monte Carlo simulations...")
     simulations = 10000
@@ -60,11 +62,13 @@ def analyze_and_plot_aggregated(file_pattern="Optimal Window Size*.csv"):
             sim_e += (guess == trial['actual'])
             sim_d += abs(trial['actual'] - guess)
         random_exacts.append(sim_e)
-        random_distances.append(sim_d)
+        # random_distances.append(sim_d)
+        random_distances.append(sim_d / len(all_valid_trials))
 
     # p-values
     p_exact = max(sum(1 for x in random_exacts if x >= model_exact) / simulations, 1 / simulations)
-    p_dist = max(sum(1 for x in random_distances if x <= model_distance) / simulations, 1 / simulations)
+    #p_dist = max(sum(1 for x in random_distances if x <= model_distance) / simulations, 1 / simulations)
+    p_dist = max(sum(1 for x in random_distances if x <= model_mae) / simulations, 1 / simulations)
 
     # ==========================================
     # plots
@@ -89,14 +93,18 @@ def analyze_and_plot_aggregated(file_pattern="Optimal Window Size*.csv"):
 
     # --- Total Distance (Near Misses) ---
     min_d, max_d = min(random_distances), max(random_distances)
-    ax2.hist(random_distances, bins=range(min_d, max_d + 2), align='left', color='#55A868', edgecolor='white',
-             alpha=0.8)
+    ax2.hist(random_distances, bins=30, color='#55A868', edgecolor='white', alpha=0.8)
 
-    ax2.axvline(model_distance, color='#C44E52', linestyle='dashed', linewidth=3,
-                label=f"Theoretical Model (Dist: {model_distance})")
+    # ax2.axvline(model_distance, color='#C44E52', linestyle='dashed', linewidth=3,
+    #             label=f"Theoretical Model (Dist: {model_distance})")
+    #
+    # ax2.set_title("Total Absolute Distance", fontsize=14)
+    # ax2.set_xlabel("Cumulative Distance from Actual Optimal $w$")
 
-    ax2.set_title("Total Absolute Distance", fontsize=14)
-    ax2.set_xlabel("Cumulative Distance from Actual Optimal $w$")
+    ax2.axvline(model_mae, color='#C44E52', linestyle='dashed', linewidth=3,
+                label=f"Theoretical Model (MAE: {model_mae:.2f})")
+    ax2.set_title("Mean Absolute Error", fontsize=14)
+    ax2.set_xlabel("Average Window Steps from Actual Optimal $w$")
     ax2.set_ylabel("Frequency (out of 10,000 sims)")
     ax2.legend()
 
@@ -107,7 +115,7 @@ def analyze_and_plot_aggregated(file_pattern="Optimal Window Size*.csv"):
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-    plt.savefig('unified_monte_carlo_results.png', dpi=300)
+    plt.savefig('unified_monte_carlo_results2.png', dpi=300)
     print("Analysis complete. High-res unified plot saved as 'unified_monte_carlo_results.png'")
 
 
