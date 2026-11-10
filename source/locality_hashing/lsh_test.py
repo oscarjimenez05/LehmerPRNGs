@@ -125,10 +125,10 @@ def compare_images_multiscale(path_a, path_b):
 
 if __name__ == "__main__":
     print("Comparing Napoleon")
-    compare_images_multiscale("nap1.jpg", "nap2.jpg")
+    compare_images_multiscale("eval_images/nap1.jpg", "eval_images/nap2.jpg")
     print("Comparing FKA Twigs")
-    compare_images_multiscale("fka1.jpg", "fka2.jpg")
+    compare_images_multiscale("eval_images/fka1.jpg", "eval_images/fka2.jpg")
     print("Comparing Napoleon with FKA Twigs")
-    compare_images_multiscale("nap1.jpg", "fka2.jpg")
+    compare_images_multiscale("eval_images/nap1.jpg", "eval_images/fka2.jpg")
     print("Comparing Speed")
-    compare_images_multiscale("speed_dark.jpg", "speed_bright.jpg")
+    compare_images_multiscale("eval_images/speed_dark.jpg", "eval_images/speed_bright.jpg")
