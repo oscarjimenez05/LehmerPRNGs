@@ -14,7 +14,7 @@ def compute_lehmer_similarity(counts_a, counts_b):
     return intersection / min_total if min_total > 0 else 0.0
 
 
-def run_benchmark(image_folder="source/locality_hashing/eval_images"):
+def run_benchmark(image_folder="./eval_images"):
     image_paths = sorted(glob.glob(os.path.join(image_folder, "*.[jJ][pP][gG]")) +
                          glob.glob(os.path.join(image_folder, "*.[pP][nN][gG]")))
 

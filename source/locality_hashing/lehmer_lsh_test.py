@@ -45,7 +45,7 @@ def extract_ngrams_with_idx(sequence, n):
     return ngrams
 
 
-def get_multiscale_features(image_path, base_width=500, scales=[1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65], w=5,
+def get_multiscale_features(image_path, base_width=500, scales=[1.0, 0.85, 0.7], w=5,
                             ngram_size=3, grid_resolution=3):
     img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     if img is None: raise ValueError(f"Error: Could not load {image_path}")
