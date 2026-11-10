@@ -45,10 +45,13 @@ def extract_ngrams_with_idx(sequence, n):
     return ngrams
 
 
-def get_multiscale_features(image_path, base_width=500, scales=[1.0, 0.85, 0.7], w=5,
-                            ngram_size=3, grid_resolution=3):
-    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-    if img is None: raise ValueError(f"Error: Could not load {image_path}")
+def get_multiscale_features(image_input, base_width=400, scales=[1.0, 0.85, 0.7], w=5,
+                            ngram_size=4, grid_resolution=8):
+    if isinstance(image_input, str):
+        img = cv2.imread(image_input, cv2.IMREAD_GRAYSCALE)
+        if img is None: raise ValueError(f"Error: Could not load {image_input}")
+    else:
+        img = image_input
 
     # resize to a normalized base width while maintaining the original aspect ratio
     aspect_ratio = img.shape[0] / img.shape[1]
@@ -91,12 +94,12 @@ def get_multiscale_features(image_path, base_width=500, scales=[1.0, 0.85, 0.7],
     return Counter(all_features)
 
 
-def compare_images_multiscale(path_a, path_b):
-    print(f"Comparing:\n1. {path_a}\n2. {path_b}\n")
+def compare_images_multiscale(image_a, image_b):
+    print(f"Comparing:\n1. {image_a}\n2. {image_b}\n")
 
     # these are Counter objects
-    counts_a = get_multiscale_features(path_a)
-    counts_b = get_multiscale_features(path_b)
+    counts_a = get_multiscale_features(image_a)
+    counts_b = get_multiscale_features(image_b)
 
     total_features_a = sum(counts_a.values())
     total_features_b = sum(counts_b.values())
@@ -125,10 +128,10 @@ def compare_images_multiscale(path_a, path_b):
 
 if __name__ == "__main__":
     print("Comparing Napoleon")
-    compare_images_multiscale("eval_images/nap1.jpg", "eval_images/nap2.jpg")
+    compare_images_multiscale(cv2.imread("eval_images/nap1.jpg"), cv2.imread("eval_images/nap2.jpg"))
     print("Comparing FKA Twigs")
-    compare_images_multiscale("eval_images/fka1.jpg", "eval_images/fka2.jpg")
+    compare_images_multiscale(cv2.imread("eval_images/fka1.jpg"), cv2.imread("eval_images/fka2.jpg"))
     print("Comparing Napoleon with FKA Twigs")
-    compare_images_multiscale("eval_images/nap1.jpg", "eval_images/fka2.jpg")
+    compare_images_multiscale(cv2.imread("eval_images/nap1.jpg"), cv2.imread("eval_images/fka2.jpg"))
     print("Comparing Speed")
-    compare_images_multiscale("eval_images/speed_dark.jpg", "eval_images/speed_bright.jpg")
+    compare_images_multiscale(cv2.imread("eval_images/speed_dark.jpg"), cv2.imread("eval_images/speed_bright.jpg"))
