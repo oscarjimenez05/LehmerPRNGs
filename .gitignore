@@ -1,4 +1,5 @@
 .idea
+.venv
 /source/*.bin
 /source/c_lcg_lh.c*
 /source/venv/
