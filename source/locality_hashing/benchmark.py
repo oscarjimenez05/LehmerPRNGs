@@ -52,18 +52,11 @@ def run_benchmark(image_folder="./eval_images"):
         blur = T.apply_noise_blur(img)
         occl = T.apply_occlusion(img)
 
-        # We save temp versions for lsh_test.get_multiscale_features which expects a path
-        cv2.imwrite("temp_orig.jpg", img)
-        cv2.imwrite("temp_mono.jpg", mono)
-        cv2.imwrite("temp_crop.jpg", crop)
-        cv2.imwrite("temp_blur.jpg", blur)
-        cv2.imwrite("temp_occl.jpg", occl)
-
-        f_orig = get_multiscale_features("temp_orig.jpg")
-        f_mono = get_multiscale_features("temp_mono.jpg")
-        f_crop = get_multiscale_features("temp_crop.jpg")
-        f_blur = get_multiscale_features("temp_blur.jpg")
-        f_occl = get_multiscale_features("temp_occl.jpg")
+        f_orig = get_multiscale_features(img)
+        f_mono = get_multiscale_features(mono)
+        f_crop = get_multiscale_features(crop)
+        f_blur = get_multiscale_features(blur)
+        f_occl = get_multiscale_features(occl)
 
         # 2. MinHash signatures directly on numpy arrays
         m_orig = ML.get_minhash_signature(img)
@@ -86,8 +79,7 @@ def run_benchmark(image_folder="./eval_images"):
         # Negative baseline: compare against the previous distinct image in the set
         if i > 0:
             prev_img = cv2.imread(image_paths[i - 1], cv2.IMREAD_GRAYSCALE)
-            cv2.imwrite("temp_prev.jpg", prev_img)
-            f_prev = get_multiscale_features("temp_prev.jpg")
+            f_prev = get_multiscale_features(prev_img)
             m_prev = ML.get_minhash_signature(prev_img)
 
             results["Lehmer"]["Distinct"].append(compute_lehmer_similarity(f_orig, f_prev))

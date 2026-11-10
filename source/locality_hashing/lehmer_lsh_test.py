@@ -1,33 +1,34 @@
 from collections import Counter
 import cv2
 import math
+import numpy as np
 
 
 def generate_lehmer_sequence(data_array, w, variance_threshold=15):
-    """
-    Applies the Lehmer code mathematical logic from your paper to an external array.
-    This replaces the Xorshift generation step with sliding window data ingestion.
-    """
-    codes = []
-    factorials = [math.factorial(w - i - 1) for i in range(w)]
+    data = np.asarray(data_array, dtype=np.int16)
+    n_windows = len(data) - w + 1
+    if n_windows <= 0:
+        return []
 
-    for i in range(len(data_array) - w + 1):
-        window = data_array[i:i + w]
+    # vectorized sliding window view
+    windows = np.lib.stride_tricks.sliding_window_view(data, w)
+    dynamic_range = windows.max(axis=1) - windows.min(axis=1)
+    valid_mask = dynamic_range >= variance_threshold
 
-        # ca to int to prevent numpy uint8 underflow
-        if int(max(window)) - int(min(window)) < variance_threshold:
-            codes.append(-1)  # insert break token to prevent stitching features
-            continue
+    # Pre-calculated factorial weights for w=5: [24, 6, 2, 1, 0]
+    weights = np.array([math.factorial(w - 1 - j) for j in range(w)], dtype=np.int32)
 
-        lehmer = 0
-        for j in range(w):
-            smaller = 0
-            for k in range(j + 1, w):
-                if window[k] < window[j]:
-                    smaller += 1
-            lehmer += smaller * factorials[j]
-        codes.append(lehmer)
+    # Broadcast pairwise comparisons across all valid windows simultaneously
+    # windows[:, :, None] < windows[:, None, :] computes window[k] < window[j]
+    comp = (windows[:, :, None] < windows[:, None, :])
+    # Mask out upper triangle so we only compare elements to the right (k > j)
+    tri_mask = np.triu(np.ones((w, w), dtype=bool), k=1)
+    smaller_counts = (comp & tri_mask).sum(axis=1)  # shape: (n_windows, w)
 
+    lehmer_values = smaller_counts @ weights
+
+    # Build output list injecting break tokens (-1) where variance was low
+    codes = np.where(valid_mask, lehmer_values, -1).tolist()
     return codes
 
 
