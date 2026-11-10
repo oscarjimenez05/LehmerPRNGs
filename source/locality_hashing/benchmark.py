@@ -94,7 +94,7 @@ def run_benchmark(image_folder="./eval_images"):
             results["MinHash"]["Distinct"].append(ML.compute_minhash_similarity(m_orig, m_prev))
 
     # Clean up temp files
-    for t in ["temp_orig.jpg", "temp_mono.jpg", "temp_crop.jpg", "temp_blur.jpg", "temp_prev.jpg"]:
+    for t in ["temp_orig.jpg", "temp_mono.jpg", "temp_crop.jpg", "temp_blur.jpg", "temp_prev.jpg", "temp_occl.jpg"]:
         if os.path.exists(t):
             os.remove(t)
 
