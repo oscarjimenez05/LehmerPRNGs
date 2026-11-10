@@ -2,7 +2,7 @@ param(
     [switch]$BigCrush = $false
 )
 
-$SEED = 12110759528222028398
+$SEED = 1987755783
 $IMAGE_NAME = "marzopa/prng-bench"
 $RESULTS_DIR = "${PWD}/results"
 
@@ -36,7 +36,6 @@ function Launch-Test ($name, $algo, $delta) {
 
 Write-Host "--- Starting Parallel Tests ---" -ForegroundColor Cyan
 
-Launch-Test "Lcomp" "Lcomp" 0
-Launch-Test "Hcomp" "Hcomp" 0
+Launch-Test "pcgtest" "pcg" 0
 
 Write-Host "Tests launched! Check the 'results' folder for active logs." -ForegroundColor Yellow

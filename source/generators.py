@@ -6,6 +6,19 @@ from sys import stderr
 # import matplotlib.pyplot as plt
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
+from numpy.random import Generator
+from randomgen import PCG32
+
+
+class PermCG32:
+
+    def __init__(self, seed: int):
+        self.generator = Generator(PCG32(seed=seed))
+
+
+    def generate_chunk(self, n: int, debug):
+        return self.generator.integers(0, 2**32, n, dtype='uint32')
+
 
 def get_factorials(w):
     factorials = []

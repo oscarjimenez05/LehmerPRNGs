@@ -14,6 +14,7 @@ import alternatives.gaussian_lh as gau
 import alternatives.slope_lh as slp
 import alternatives.decay_lh as dec
 import alternatives.comp as comp
+import generators
 
 maximum = 2 ** 32 - 1
 chunk_size = 8192
@@ -124,7 +125,7 @@ def main():
 
     parser.add_argument("--total", type=int, help="total numbers to generate (required for file mode)")
     parser.add_argument("--algo", choices=['lcg', 'xor', 'lfw', 'xfw', 'log',
-                                           'gau', 'slp', 'dec', 'Lcomp', 'Hcomp'], default='lcg', help="Choose generator algorithm")
+                                           'gau', 'slp', 'dec', 'Lcomp', 'Hcomp', 'pcg'], default='lcg', help="Choose generator algorithm")
     parser.add_argument("--debug", action="store_true", help="enable debug mode")
 
     args = parser.parse_args()
@@ -156,6 +157,8 @@ def main():
             generator = comp.LmLcg(args.seed, 0, maximum)
         case 'Hcomp':
             generator = comp.HighBitsLcg(args.seed, 0, maximum)
+        case 'pcg':
+            generator = generators.PermCG32(args.seed)
 
     # -----------------------------------------------
 
