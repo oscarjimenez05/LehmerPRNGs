@@ -45,6 +45,7 @@ def run_benchmark(image_folder="./eval_images"):
         if img is None:
             continue
 
+        print(f"[{i + 1}/{len(image_paths)}] Processing: {os.path.basename(path)}", flush=True)
         # 1. Synthesize ground-truth transformations
         mono = T.apply_monotonic_distortion(img)
         crop = T.apply_crop(img)
